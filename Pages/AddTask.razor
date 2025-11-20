@@ -1,0 +1,46 @@
+﻿@page "/add-task"
+@using BlazorKanbanLite.Models
+@using BlazorKanbanLite.Services
+@inject NavigationManager Nav
+@inject ITaskService TaskService
+
+<h2>Add New Task</h2>
+
+<EditForm Model="Model" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="task-form">
+
+        <label>Title</label>
+        <input @bind="Model.Title" class="input" />
+        <ValidationMessage For="@(() => Model.Title)" />
+
+        <label>Description</label>
+        <textarea @bind="Model.Description" class="input"></textarea>
+        <ValidationMessage For="@(() => Model.Description)" />
+
+        <label>Status</label>
+        <select @bind="Model.Status" class="input">
+            <option value="ToDo">To Do</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Done">Done</option>
+        </select>
+
+        <button type="submit" class="btn save">Save</button>
+        <button type="button" @onclick="Cancel" class="btn cancel">Cancel</button>
+
+    </div>
+</EditForm>
+
+@code {
+    TaskItem Model = new TaskItem();
+
+    void Save()
+    {
+        TaskService.Create(Model);
+        Nav.NavigateTo("/");
+    }
+
+    void Cancel() => Nav.NavigateTo("/");
+}

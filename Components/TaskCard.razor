@@ -1,0 +1,35 @@
+﻿@using BlazorKanbanLite.Models
+@inject IJSRuntime JS
+
+<div class="task-card" draggable="true"
+     @ondragstart="OnDragStart">
+
+    <div class="task-title">@Item.Title</div>
+    <div class="task-desc">@Item.Description</div>
+    <div class="task-desc">@Item.Status</div>
+
+    <div class="task-actions">
+        <button class="edit-btn" @onclick="Edit">Edit</button>
+        <button class="delete-btn" @onclick="Delete">Delete</button>
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public required TaskItem Item { get; set; }
+
+    [Parameter]
+    public EventCallback<TaskItem> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<TaskItem> OnDelete { get; set; }
+
+    void OnDragStart(DragEventArgs e)
+    {
+        JS.InvokeVoidAsync("dragHelper.set", Item.Id.ToString());
+    }
+
+    Task Edit() => OnEdit.InvokeAsync(Item);
+    Task Delete() => OnDelete.InvokeAsync(Item);
+}

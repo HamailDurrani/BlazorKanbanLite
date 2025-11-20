@@ -1,0 +1,133 @@
+﻿ @using BlazorKanbanLite.Services
+@inject ITaskService TaskService
+@using BlazorKanbanLite.Models
+@using TaskStatus = BlazorKanbanLite.Models.TaskStatus
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<div class="kanban-container">
+
+    @foreach (var status in Enum.GetValues<TaskStatus>())
+    {
+        var tasksInColumn = GetPagedByStatus(status);
+
+        <div class="kanban-column"
+             @ondrop="e => OnDrop(status)"
+             @ondragover="OnDragOver"
+             @ondragover:preventDefault="true">
+
+            <div class="column-header">@status</div>
+
+            <div class="column-body">
+                @foreach (var task in tasksInColumn)
+                {
+                    <TaskCard Item="task"
+                              OnEdit="BeginEdit"
+                              OnDelete="Delete" />
+                }
+            </div>
+
+            <button class="add-btn" @onclick="() => GoToAddTask(status)">
+                Add Task
+            </button>
+        </div>
+    }
+
+</div>
+
+<div class="pagination-container">
+    <button disabled="@(CurrentPage == 1)"
+            @onclick="PrevPage">
+        Previous
+    </button>
+
+    <span>Page @CurrentPage / @TotalPages</span>
+
+    <button disabled="@(CurrentPage == TotalPages)"
+            @onclick="NextPage">
+        Next
+    </button>
+</div>
+
+@code {
+    private const int PageSize = 3; 
+    int CurrentPage = 1;
+
+    
+    int TotalPages => Enum
+        .GetValues<TaskStatus>()
+        .Select(s => (int)Math.Ceiling(TaskService.GetByStatus(s).Count() / (double)PageSize))
+        .Max();
+
+
+    IEnumerable<TaskItem> GetPagedByStatus(TaskStatus status)
+    {
+        var all = TaskService.GetByStatus(status).ToList();
+
+        return all
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize);
+    }
+
+    void NextPage()
+    {
+        if (CurrentPage < TotalPages)
+        {
+            CurrentPage++;
+            StateHasChanged();
+        }
+    }
+
+    void PrevPage()
+    {
+        if (CurrentPage > 1)
+        {
+            CurrentPage--;
+            StateHasChanged();
+        }
+    }
+
+    
+
+    async Task OnDrop(TaskStatus status)
+    {
+        var id = await JS.InvokeAsync<string>("dragHelper.get");
+
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
+        var task = TaskService.GetAll()
+            .FirstOrDefault(t => t.Id == id);
+
+        if (task != null)
+        {
+            task.Status = status;
+            TaskService.Update(task);
+        }
+    }
+
+    Task BeginEdit(TaskItem task)
+    {
+        Nav.NavigateTo($"/edit-task/{task.Id}");
+        return Task.CompletedTask;
+    }
+
+    Task Delete(TaskItem task)
+    {
+        TaskService.Delete(task);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    void GoToAddTask(TaskStatus status)
+    {
+        Nav.NavigateTo($"/add-task?status={status}");
+    }
+
+    void CancelEdit() { }
+
+    private Task OnDragOver(DragEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
+}

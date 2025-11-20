@@ -1,0 +1,68 @@
+﻿@page "/edit-task/{id}"
+@using BlazorKanbanLite.Models
+@using BlazorKanbanLite.Services
+@inject NavigationManager Nav
+@inject ITaskService TaskService
+@using TaskStatus = BlazorKanbanLite.Models.TaskStatus
+
+<h2>Edit Task</h2>
+
+@if (Model == null)
+{
+    <p class="text-danger">Task not found.</p>
+}
+else
+{
+    <div class="task-form">
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="text-danger">@ErrorMessage</p>
+        }
+
+        <label>Title</label>
+        <input @bind="Model.Title" />
+
+        <label>Description</label>
+        <textarea @bind="Model.Description"></textarea>
+
+        <label>Status</label>
+        <select @bind="Model.Status">
+            <option value="@TaskStatus.ToDo">To Do</option>
+            <option value="@TaskStatus.InProgress">In Progress</option>
+            <option value="@TaskStatus.Done">Done</option>
+        </select>
+
+        <button class="btn save" @onclick="Save">Update</button>
+        <button class="btn cancel" @onclick="Cancel">Cancel</button>
+    </div>
+}
+
+@code {
+    [Parameter] public string id { get; set; } = "";
+    TaskItem? Model;
+    string ErrorMessage = "";
+
+    protected override void OnInitialized()
+    {
+        Model = TaskService.GetAll().FirstOrDefault(t => t.Id == id);
+    }
+
+    void Save()
+    {
+        if (Model == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(Model.Title) ||
+            string.IsNullOrWhiteSpace(Model.Description))
+        {
+            ErrorMessage = "Title and Description cannot be empty!";
+            return;
+        }
+
+        TaskService.Update(Model);
+        Nav.NavigateTo("/");
+    }
+
+    void Cancel() => Nav.NavigateTo("/");
+}

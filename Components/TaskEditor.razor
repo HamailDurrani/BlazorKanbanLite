@@ -1,0 +1,52 @@
+﻿@using BlazorKanbanLite.Models
+@using TaskStatus = BlazorKanbanLite.Models.TaskStatus;
+
+
+<div class="editor">
+
+    <input @bind="Working.Title" placeholder="Title" />
+
+    <textarea @bind="Working.Description" placeholder="Description"></textarea>
+
+    <select @bind="Working.Status">
+
+        <option value="@TaskStatus.ToDo">To Do</option>
+        <option value="@TaskStatus.InProgress">In Progress</option>
+        <option value="@TaskStatus.Done">Done</option>
+
+
+    </select>
+
+    <button @onclick="Save">Save</button>
+    <button @onclick="Cancel">Cancel</button>
+
+
+</div>
+
+@code {
+    [Parameter] public TaskItem? Item { get; set; }
+    [Parameter] public EventCallback<TaskItem> OnSave { get; set; }
+    [Parameter] public EventCallback<TaskItem> OnCancel { get; set; }
+
+
+    TaskItem Working = new();
+
+    protected override void OnParametersSet()
+    {
+        Working = Item != null
+        ? new TaskItem
+            {
+                Id = Item.Id,
+                Title = Item.Title,
+                Description = Item.Description,
+                Status = Item.Status
+            }
+        : new TaskItem();
+    }
+
+
+    Task Save() => OnSave.InvokeAsync(Working);
+    Task Cancel() => OnCancel.InvokeAsync();
+
+
+}
